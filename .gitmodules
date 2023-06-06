@@ -1,0 +1,3 @@
+[submodule "linux"]
+	path = linux
+	url = https://github.com/godkid1412/linux.git
