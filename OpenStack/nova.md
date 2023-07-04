@@ -4,7 +4,7 @@ Nova-conductor:
 
 Nova-scheduler: là dịch vụ chọn compute node có để chạy instance trên đó
 
-1. Keystone lấy user credential và thực hiện REST call đến Keystone để xác thực
+1. Dashboard/ CLI lấy user credential và thực hiện REST call đến Keystone để xác thực
 2. Keystone xác minh user credentials, tạo và gửi auth-token (dùng để gửi request đến thành phần khác qua REST-call)
 3. CLI gửi request 'launch instance' đến 'nova-api'
 4. 'nova-api' nhận request và gửi gửi request xác mình auth-token, quyền truy cập đến 'keystone'
