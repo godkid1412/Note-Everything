@@ -51,9 +51,9 @@ Kết quả:
 ---
 
     Nodeid      Votes Name
-         1          1 lb01 (local)
-         2          1 lb02
-         3          1 lb03
+         1          1 node1 (local)
+         2          1 node2
+         3          1 node3
 
 ## Phương án thực hiện
 
@@ -61,19 +61,46 @@ Kết quả:
 
   `pcs property set no-quorum-policy=ignore`
 
-- Cài đặt các resouce : ocf::heartbeat:nfsserver, ocf::heartbeat:filesystem, ocf::heartbeat:exportfs
+- Cài đặt các resouce : ocf::heartbeat:nfsserver, ocf::heartbeat:filesystem, ocf::heartbeat:exportfs,
 
 - Cài đặt các ràng buộc liên quan: các constraint location để chuyển resource khi fail, constraint colocation để các resource được cấu hình trên cùng 1 node
 
+Kiểm tra các resource xem có đang chạy trên node đang chứa VIP của keepalive không? Với node1 đang chứa VIP của KeepAlived, ta cho các node còn lại về standby thì các resource sẽ tự động chạy về node1 sau đó cho các node đó chạy lại bình thường:
+
+    pcs node standby node1 node2 && pcs node unstandby node1 node2
+
 Kiểm tra các trường hợp các xem các resource có tự động chuyển qua node khác khi một resource bị lỗi không? Nếu không thì xem lại các constraint bên trên
 
-- Tạo file backup cho file cấu hình KeepAlive
+- Tạo file backup cho file cấu hình KeepAlived
+- Ta đứng tại node đang chứa VIP của KeepAlived rồi thêm resource ocf::heartbeat:IPaddr2 để resource đó chạy trên node chứa VIP (node1). Khi đó tại node1 trên cùng 1 interface sẽ có 3 IP là IP mặc định và 2 VIP
 
-- Gỡ bỏ VIP ở KeepAlive và thêm resource ocf::heartbeat:IPaddr2 vào trong cluster
+Trước khi xóa VIP của KeepAlived, ta tiến hàng đứng tại server NFS Client tiến hành ghi dữ liệu vào thư mục được mount (/home/good/test) với thư mục mà NFS Server chia sẻ (/data) và chạy script:
+
+```
+#!/bin/bash
+
+folder="/home/good/test"  # Đường dẫn tới thư mục bạn muốn ghi file vào
+
+for ((i=1; i<=100000; i++))
+do
+    filename="file${i}.txt"
+    filepath="${folder}/${filename}"
+    echo "This is file ${i}" > $filepath
+    echo "Created file: $filename"
+done
+```
+
+Lưu đoạn script với đuôi `.sh`(test.sh). Sau đó chạy script với lệnh: `bash test.sh`
+
+- Gỡ bỏ VIP của KeepAlive và kiểm tra lại IP của node1. Khi đó trên interface của node1 có 1 IP mặc định và 1 VIP của pacemaker
 
 ## Dự kiến downtime dịch vụ
 
-- Downtime trong thời gian chuyển đổi VIP từ KeepAlive sang Pacemaker
+Sau khi cài đặt xong thì t kiểm tra lại số lượng file trong thư mục /home/good/test bằng lệnh:
+
+    ls -1 | wc -l
+
+Kết quả trả về `100000` khi đó việc đọc ghi được thực hiện liên tục mà không có downtime cho dịch vụ
 
 ## Phương án rollback khi setup lỗi
 
